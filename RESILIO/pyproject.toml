@@ -20,3 +20,5 @@ entrypoint = "config.wsgi:application"
 
 [tool.vercel.scripts]
 build = "python tools/vercel_build.py"
+
+# Refresh deployment
