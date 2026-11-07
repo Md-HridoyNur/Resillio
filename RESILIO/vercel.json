@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "config/wsgi.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{original-base/**,docs/**,tools/**,**/tests.py,**/test_*.py,**/*.sqlite3,**/*.sqlite3-*,.local-secret,.env,.env.*,*.md,requirements-browser.txt}"
+    }
+  }
+}

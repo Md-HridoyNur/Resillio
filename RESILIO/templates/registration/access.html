@@ -1,0 +1,8 @@
+{% extends 'registration/base.html' %}{% block content %}
+<span class="section-tag">CHOOSE YOUR WORKSPACE</span><h2>Three roles. One response.</h2><p class="muted">Sign in to the workspace assigned to your account.</p>
+<div class="portal-stack">
+<a class="portal-card admin-portal" href="/accounts/login/?portal=admin"><span class="portal-number">01</span><div><h3>Administrator</h3><p>Approve officers, review reports and oversee the response.</p></div><span aria-hidden="true">→</span></a>
+<a class="portal-card officer-portal" href="/accounts/login/?portal=coordinator"><span class="portal-number">02</span><div><h3>NGO / Relief Officer</h3><p>Coordinate volunteers, allocate supplies and maintain shelters.</p></div><span aria-hidden="true">→</span></a>
+<a class="portal-card volunteer-portal" href="/accounts/login/?portal=volunteer"><span class="portal-number">03</span><div><h3>Volunteer</h3><p>Reserve supplies, manage your assignments and deliver help.</p></div><span aria-hidden="true">→</span></a></div>
+<div class="community-access"><h3>Need help or have supplies to share?</h3><p>Community members and donors can post requests and resource offers.</p><a href="/accounts/login/?portal=community">Community sign in</a> · <a href="/register/?role=community">Create community account</a></div>
+<p>New volunteer or organization? <a class="strong-link" href="/register/">Join the response →</a></p>{% endblock %}

@@ -1,0 +1,2 @@
+{% extends 'registration/base.html' %}{% block content %}
+<a href="/access/" class="back-link">← Explore the workspaces</a><span class="section-tag">BECOME PART OF THE RESPONSE</span><h2>Create your account</h2><p>Choose Volunteer, NGO / Relief Officer or Community / Donor. Officer applications require administrator approval.</p><form method="post" class="account-form">{% csrf_token %}{{ form.as_p }}<button class="btn-primary account-submit">Create account</button></form><p>Already registered? <a href="/access/" class="strong-link">Sign in →</a></p>{% endblock %}

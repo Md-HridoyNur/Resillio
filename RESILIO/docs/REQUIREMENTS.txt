@@ -1,0 +1,304 @@
+Build a complete, working Web & Internet Programming course project named **RESILIO: Disaster Resource Coordination and Volunteer Management System**, using my attached website files as the starting point.
+
+**Attached source files**
+
+- `index(2).html`
+- `style(2).css`
+- `script(2).js`
+
+Read all three files before changing them. Preserve an unchanged copy in an `original-base/` folder. Briefly explain the existing functionality, then implement the application completely. Do not stop after providing a plan or frontend demonstration.
+
+**1. Required technology stack**
+
+- **Frontend:** HTML5, CSS3 and vanilla JavaScript.
+- **Frontend interaction:** DOM manipulation, event listeners and Fetch API.
+- **Backend:** Python with Django.
+- **Database:** SQLite for straightforward local installation.
+- **Authentication:** Django’s authentication, password hashing and session framework.
+- **Offline storage:** IndexedDB for pending requests.
+- **Offline application assets:** Service Worker and Cache API where supported.
+
+Use Django—not Flask. React, Node.js, npm and a separate database server must not be required to run the application. Use a supported Django release and document the exact dependencies.
+
+Organize the project with Django templates, static assets, models, migrations, forms or validation services, views and URLs. Use Django ORM for database operations.
+
+**2. Preserve and improve the original design**
+
+Keep RESILIO’s recognizable appearance:
+
+- Strong RESILIO title and condensed display typography.
+- Red emergency controls, green availability indicators and amber warnings.
+- Resource cards, category filters, supply-versus-demand analysis and crisis mode.
+- Subtle grid backgrounds and purposeful animations.
+- The original dark appearance as the foundation for dark mode.
+
+Extend this design into a consistent application rather than replacing it with a generic admin template. Bundle necessary fonts and assets locally so the interface does not depend on Google Fonts or external CDNs.
+
+Improve small-text readability, contrast, mobile layouts, navigation and keyboard accessibility. Include visible focus indicators, labeled inputs, accessible dialogs, loading states, empty states and useful errors. Respect reduced-motion preferences.
+
+Fix the existing crisis-overlay feedback problem: messages must remain visible above or inside the dialog. Closed dialogs must not leave hidden controls keyboard-focusable.
+
+**3. Implement both light and dark modes**
+
+Provide a theme toggle available throughout the application.
+
+- **Light mode:** white or soft-gray page backgrounds, white cards, dark text and clearly visible borders.
+- **Dark mode:** preserve the original RESILIO dark backgrounds and dashboard panels.
+- Preserve the same branding, layout and functionality in both modes.
+- Keep red emergency controls, green availability indicators and amber warnings readable against both themes.
+- Apply the selected theme to all application screens, including navigation, forms, dialogs, cards, charts, notifications, crisis mode and the custom administrator workspace.
+- Keep Django’s built-in administration interface usable with its supported theme controls.
+- On the first visit, follow the device’s system preference.
+- Save a manual selection in localStorage and restore it on future visits, including offline visits.
+- If no manual preference exists, respond to changes in the system preference.
+- Prevent a visible flash of the wrong theme during page loading.
+- Use shared CSS variables for theme colors. Update canvas or SVG visualizations when the theme changes.
+- Give the toggle an accessible label, clear current-state indication and keyboard support.
+- Ensure adequate text, control, border and chart contrast in both modes.
+- If browser storage is unavailable, allow theme switching for the current session without breaking the application.
+
+**4. Replace simulated functionality**
+
+The current files contain sample resource arrays, randomly generated alerts, fixed statistics, simulated network nodes and message-only action buttons.
+
+Replace these with actual application behavior:
+
+- Read resource records from Django and SQLite.
+- Calculate dashboard counts from database records.
+- Generate notifications from saved events.
+- Make delivery and assistance actions perform validated backend operations.
+- Show success only after the server confirms a successful save.
+- Calculate relative timestamps from stored dates.
+- Use consistent totals across all screens.
+- Remove invented distances, connection latency, battery information and online-node counts.
+
+Seeded sample records are acceptable, but identify them as demonstration data.
+
+**5. Accounts and permissions**
+
+Support these account types:
+
+- **Community member:** can both request assistance and offer supplies.
+- **Volunteer:** can also coordinate resource reservations and deliveries.
+- **Administrator:** can review reports, moderate records and maintain shelters.
+
+Implement registration, login, logout and basic profile updates. Public registration must not grant administrator privileges. Create administrators through Django’s supported management process.
+
+Enforce ownership and permissions on the backend. Hiding a button is not sufficient protection. Users must not access another user’s private notifications or alter records without permission.
+
+**6. Resource offers and help requests**
+
+Keep offers and requests as separate records.
+
+Capture:
+
+- Canonical item and category.
+- Quantity and unit.
+- Area.
+- Description.
+- Owner or requester.
+- Creation and update timestamps.
+- Request urgency.
+- Optional offer expiry date.
+- Record status.
+
+Use categories such as water, food, medical supplies and shelter supplies. Distinguish items within a category: drinking water in litres must not be treated as equivalent to purification tablets.
+
+Allow users to create, view, edit and cancel owned records where the workflow permits. Preserve completed delivery history. Prevent edits that would invalidate existing allocations.
+
+Provide combined searching and filtering by item, category, area, urgency and availability. Normalize area values consistently.
+
+**7. Explainable matching and partial fulfilment**
+
+For each open request, show compatible resource offers.
+
+Matching must:
+
+- Require compatible items and units.
+- Exclude cancelled, expired or exhausted offers.
+- Consider area, available quantity and expiry.
+- Explain recommendations, such as “Same area” or “Can partially fulfil this request.”
+- Recheck stock on the server when a reservation is submitted.
+
+Support several offers fulfilling one request and one offer supplying several requests.
+
+Track quantities consistently:
+
+**Available supply = offered quantity − confirmed deliveries − active reservations.**
+
+Also track remaining unallocated need. Never combine unrelated units in analytics or matching.
+
+**8. Volunteer assignments and delivery confirmation**
+
+Implement this workflow:
+
+**Assigned → In Progress → Awaiting Confirmation → Delivered**
+
+A volunteer selects a compatible offer, reserves a quantity and coordinates delivery. The volunteer submits the actual delivered quantity. The requester or authorized administrator confirms receipt.
+
+Requirements:
+
+- Prevent reservations exceeding available stock or unallocated need.
+- Prevent duplicate delivery confirmation.
+- Support partial delivery.
+- Release unused reserved quantities after partial completion.
+- Release reservations when an assignment is cancelled.
+- Mark a request fulfilled only when confirmed deliveries satisfy its quantity.
+- Validate permitted status transitions and authorized actors.
+
+Use database transactions and constraints. Implement concurrency protection that works with SQLite; do not assume `select_for_update()` provides row locking on SQLite. Handle conflicting writes with clear responses.
+
+**9. Required application screens**
+
+Create these screens in the original RESILIO visual style, supporting both light and dark modes:
+
+1. **Overview:** actual statistics, request/offer board, filters and shortages.
+2. **Request/offer forms:** create and edit records with field-level validation.
+3. **My Activity:** owned requests, donor inventory and involved deliveries.
+4. **Volunteer Desk:** assignments, progress controls and delivery submission.
+5. **Shelters:** occupied, reserved and available capacity.
+6. **Notifications:** user-specific event updates and read status.
+7. **Sync Center:** local pending requests, failures, retries and server confirmations.
+8. **Administration:** reports, moderation, operational information and audit history.
+9. **Crisis Mode:** large category buttons opening short, prefilled request forms.
+
+Provide a styled administrator workspace alongside Django’s built-in admin.
+
+For the existing map/network section, use an area-based resource visualization connected to database records. Keep a list alternative. Any retained animated topology must be explicitly labeled “Simulation”; it must not imply actual peer discovery.
+
+**10. Shelter management**
+
+Keep shelter facilities separate from blanket or tent offers.
+
+Store facility name, area, total capacity, occupied spaces, reserved spaces and description.
+
+Administrators must be able to:
+
+- Add a shelter.
+- Check in unreserved guests.
+- Check out guests.
+- Reserve or release spaces.
+- Convert reserved spaces into occupied spaces.
+
+Prevent negative values and ensure:
+
+**Occupied + reserved ≤ total capacity.**
+
+Display actual remaining capacity and record administrative updates.
+
+**11. Notifications, analytics and moderation**
+
+Generate notifications for actual assignment, delivery and review events. Include unread indicators and a mark-as-read function.
+
+Calculate shortages by compatible item, unit and area. Prefer clear quantities such as “130 L available / 200 L needed” over unexplained percentages.
+
+Allow users to report inaccurate or duplicate posts. Administrators review reports and record their decisions; reports must not automatically delete records.
+
+Maintain audit history for meaningful operational changes.
+
+Periodic Fetch API polling is acceptable. If used, document the interval rather than describing it as WebSocket communication.
+
+**12. Define three connectivity situations clearly**
+
+**A. Connected to a hosted server**
+
+Provide normal browser-to-Django operation.
+
+**B. Internet unavailable, local Wi-Fi available**
+
+A laptop runs Django and SQLite. Phones on the same router or hotspot access the laptop’s local network address. Core coordination can work without mobile data if the server is reachable.
+
+Document LAN binding, the laptop’s address, host configuration and relevant firewall considerations. A phone must use the laptop’s address—not `127.0.0.1`.
+
+**C. Server unreachable**
+
+Show cached public information with its last successful sync time and allow new help requests to be saved on the device.
+
+For offline requests:
+
+- Store a stable client-generated identifier and creating account ID.
+- Show Pending sync, Failed and Synced states.
+- Synchronize only under the correct authenticated account.
+- Prevent duplicates when retrying after a lost response.
+- Display the confirmed server request ID.
+- Preserve failed entries and explain how to retry.
+- Explain that removing a local entry does not cancel an existing server request.
+
+Do not cache private API responses or passwords. Keep local request data minimal.
+
+Handle secure-context requirements correctly: service workers generally need HTTPS or localhost. Provide feature detection and document trusted HTTPS for full offline features on LAN devices. Do not assume a phone accessing an HTTP laptop address receives localhost privileges, or rely unconditionally on secure-context-only browser APIs.
+
+**13. Keep networking claims accurate**
+
+This version must not claim to provide:
+
+- Bluetooth phone-to-phone messaging.
+- Wi-Fi Direct discovery.
+- A real peer-to-peer mesh.
+- Automatic relaying between disconnected communities.
+- Emergency-service dispatch.
+
+These are future extensions requiring additional networking components or a native mobile application.
+
+Replace “request broadcast to mesh” with the actual result: saved on server, saved on device or synchronization failed.
+
+**14. Database and security requirements**
+
+Use Django models and committed migrations for accounts/profiles, categories, items, offers, requests, assignments, deliveries, notifications, reports, shelters and audit history.
+
+Include appropriate foreign keys, uniqueness rules, validation and indexes.
+
+Use Django CSRF protection, session authentication, password hashing and backend permission checks. Validate all quantities, units, dates and status transitions. Render user text safely and avoid inserting untrusted strings through `innerHTML`.
+
+Keep secrets and runtime databases out of the deliverable. Configure allowed hosts and trusted origins explicitly; do not disable security checks to make LAN access work.
+
+**15. Test and document the project**
+
+Test the actual application, including:
+
+- Authentication, ownership and role restrictions.
+- Resource creation, editing, cancellation and expiry.
+- Item/unit compatibility.
+- Concurrent allocation and over-reservation prevention.
+- Full and partial delivery.
+- Reservation release and duplicate confirmation.
+- User-specific notifications and report review.
+- Shelter-capacity limits.
+- Duplicate-safe request synchronization and account isolation.
+- Persistence across restart.
+- Light/dark theme switching, persistence and system-preference behavior.
+- Readability of forms, dialogs, charts and crisis mode in both themes.
+
+Check frontend forms and DOM behavior. Test responsive layouts and offline browser behavior where tools allow. Report actual results and clearly identify checks that could not be completed.
+
+**16. Deliver everything in one ZIP**
+
+Return a complete downloadable ZIP containing:
+
+- Django project and application source.
+- HTML templates, CSS, JavaScript and local assets.
+- Complete light and dark theme implementation.
+- Models and migrations.
+- Dependency requirements.
+- A safe, repeatable demo-data management command.
+- Documented fictional demo accounts.
+- Windows and macOS/Linux startup instructions or launchers.
+- README with installation, migration, seeding and running instructions.
+- Local-network and HTTPS/offline setup guidance.
+- Database/architecture documentation and course-concept mapping.
+- Tests and an accurate validation summary.
+- The unchanged original files in `original-base/`.
+
+Do not include installed dependencies, virtual environments, generated secrets or real user databases.
+
+Preserve the existing public Netlify website unless I separately request deployment.
+
+**Acceptance demonstration**
+
+A requester posts a need for 20 L of drinking water. A donor offers 50 L. A volunteer reserves 20 L, starts delivery and submits the delivered quantity. The requester confirms receipt. The request becomes fulfilled, 30 L remains available and dashboard totals update once.
+
+Then save another request while the server is unreachable, reconnect and synchronize it. Repeating synchronization must not create another copy.
+
+Switch between light and dark modes across the application, reload the page and confirm the selected theme persists. Both themes must remain readable on desktop and mobile.
+
+The finished result must be a coherent, understandable Django course project built from my original RESILIO design, with working backend workflows, complete light/dark themes and accurately described connectivity limits.

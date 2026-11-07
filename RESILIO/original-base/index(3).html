@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resilio – Peer-to-Peer Disaster Resource Mesh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <div class="nav-logo">
+      <span class="logo-pulse"></span>
+      RESILIO
+    </div>
+    <div class="nav-status">
+      <span class="mesh-dot"></span>
+      <span id="mesh-status">MESH ACTIVE</span>
+    </div>
+    <div class="nav-links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#network">Network</a>
+      <a href="#alerts">Alerts</a>
+      <button class="crisis-btn" id="crisisToggle">☢ CRISIS MODE</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-tag">ACTIVE IN 14 ZONES · 3,200 NODES ONLINE</div>
+      <h1 class="hero-title">RESILIO</h1>
+      <p class="hero-sub">Peer-to-Peer Disaster Resource Mesh</p>
+      <p class="hero-desc">Real-time resource sharing for disaster zones. Works offline. No internet required. Powered by people.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="scrollTo('dashboard')">VIEW DASHBOARD</button>
+        <button class="btn-outline" onclick="scrollTo('network')">JOIN MESH</button>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <span class="stat-num" id="s1">0</span>
+        <span class="stat-label">Resources Shared</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="s2">0</span>
+        <span class="stat-label">Active Nodes</span>
+      </div>
+      <div class="stat-card urgent">
+        <span class="stat-num" id="s3">0</span>
+        <span class="stat-label">Urgent Requests</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="section" id="dashboard">
+    <div class="section-header">
+      <span class="section-tag">LIVE FEED</span>
+      <h2>Resource Dashboard</h2>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">ALL</button>
+      <button class="filter-btn" data-filter="water">💧 WATER</button>
+      <button class="filter-btn" data-filter="food">🍱 FOOD</button>
+      <button class="filter-btn" data-filter="medical">💊 MEDICAL</button>
+      <button class="filter-btn" data-filter="shelter">🏠 SHELTER</button>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Map Panel -->
+      <div class="map-panel">
+        <div class="map-header">
+          <span>ZONE MAP — SECTOR 7</span>
+          <span class="map-live">● LIVE</span>
+        </div>
+        <div class="map-canvas" id="mapCanvas">
+          <canvas id="nodeMap"></canvas>
+          <div class="map-legend">
+            <span class="legend-item"><span class="dot red"></span>Urgent</span>
+            <span class="legend-item"><span class="dot green"></span>Available</span>
+            <span class="legend-item"><span class="dot gray"></span>Offline</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resource List -->
+      <div class="resource-list" id="resourceList">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS SECTION -->
+  <section class="section dark-section" id="analytics">
+    <div class="section-header light">
+      <span class="section-tag">INTELLIGENCE</span>
+      <h2>Supply vs Demand Analysis</h2>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card" id="chart-water">
+        <div class="chart-title">💧 Water</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Supply</span>
+            <div class="bar-track"><div class="bar-fill green" style="width:0%" data-target="65%"></div></div>
+            <span class="bar-val">65%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Demand</span>
+            <div class="bar-track"><div class="bar-fill red" style="width:0%" data-target="88%"></div></div>
+            <span class="bar-val">88%</span>
+          </div>
+        </div>
+        <div class="shortage-tag">⚠ SHORTAGE — Alert volunteers</div>
+      </div>
+
+      <div class="chart-card" id="chart-food">
+        <div class="chart-title">🍱 Food</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Supply</span>
+            <div class="bar-track"><div class="bar-fill green" style="width:0%" data-target="72%"></div></div>
+            <span class="bar-val">72%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Demand</span>
+            <div class="bar-track"><div class="bar-fill red" style="width:0%" data-target="60%"></div></div>
+            <span class="bar-val">60%</span>
+          </div>
+        </div>
+        <div class="ok-tag">✓ SURPLUS AVAILABLE</div>
+      </div>
+
+      <div class="chart-card" id="chart-medical">
+        <div class="chart-title">💊 Medical</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Supply</span>
+            <div class="bar-track"><div class="bar-fill green" style="width:0%" data-target="30%"></div></div>
+            <span class="bar-val">30%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Demand</span>
+            <div class="bar-track"><div class="bar-fill red" style="width:0%" data-target="95%"></div></div>
+            <span class="bar-val">95%</span>
+          </div>
+        </div>
+        <div class="shortage-tag critical">🆘 CRITICAL — Immediate action needed</div>
+      </div>
+
+      <div class="chart-card" id="chart-shelter">
+        <div class="chart-title">🏠 Shelter</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <span class="bar-label">Supply</span>
+            <div class="bar-track"><div class="bar-fill green" style="width:0%" data-target="55%"></div></div>
+            <span class="bar-val">55%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Demand</span>
+            <div class="bar-track"><div class="bar-fill red" style="width:0%" data-target="70%"></div></div>
+            <span class="bar-val">70%</span>
+          </div>
+        </div>
+        <div class="shortage-tag">⚠ SHORTAGE — Alert volunteers</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- P2P NETWORK VIEW -->
+  <section class="section" id="network">
+    <div class="section-header">
+      <span class="section-tag">MESH TOPOLOGY</span>
+      <h2>Peer-to-Peer Network View</h2>
+    </div>
+    <div class="network-container">
+      <canvas id="networkCanvas"></canvas>
+      <div class="network-info">
+        <div class="info-panel" id="nodeInfo">
+          <p class="info-placeholder">← Tap a node to see details</p>
+        </div>
+        <div class="network-stats">
+          <div class="ns-item"><span class="ns-num">3,241</span><span class="ns-label">Active Nodes</span></div>
+          <div class="ns-item"><span class="ns-num">12,804</span><span class="ns-label">Connections</span></div>
+          <div class="ns-item"><span class="ns-num">98ms</span><span class="ns-label">Avg Latency</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ALERTS -->
+  <section class="section dark-section" id="alerts">
+    <div class="section-header light">
+      <span class="section-tag">NOTIFICATIONS</span>
+      <h2>Live Alerts</h2>
+    </div>
+    <div class="alerts-container" id="alertsContainer">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- CRISIS MODE OVERLAY -->
+  <div class="crisis-overlay" id="crisisOverlay">
+    <div class="crisis-header">
+      <div class="crisis-logo">⚠ CRISIS MODE</div>
+      <div class="crisis-conn">
+        <span class="mesh-dot"></span> MESH CONNECTED
+      </div>
+      <button class="crisis-close" id="crisisClose">✕ EXIT</button>
+    </div>
+    <div class="crisis-buttons">
+      <button class="crisis-action water">💧<br>REQUEST<br>WATER</button>
+      <button class="crisis-action food">🍱<br>REQUEST<br>FOOD</button>
+      <button class="crisis-action medical">🆘<br>REQUEST<br>MEDICAL</button>
+      <button class="crisis-action shelter">🏠<br>REQUEST<br>SHELTER</button>
+    </div>
+    <div class="crisis-urgent">
+      <div class="crisis-urgent-label">URGENT NEARBY</div>
+      <div class="crisis-urgent-item flash">🆘 Medical aid needed — Node #1847 — 0.3km</div>
+      <div class="crisis-urgent-item">💧 Water request — Node #2291 — 0.7km</div>
+    </div>
+    <div class="crisis-footer">
+      <span>OFFLINE MESH MODE · LAST SYNC: 2 MIN AGO · 14 NODES IN RANGE</span>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

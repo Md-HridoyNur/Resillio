@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RESILIO · Disaster coordination</title>
+    <script src="/static/resilio/theme.js"></script>
+    <script>
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener(
+          "controllerchange",
+          () => location.reload(),
+          { once: true },
+        );
+      }
+    </script>
+    <link rel="stylesheet" href="/static/resilio/app.css" />
+    <script defer src="/static/resilio/app.js"></script>
+    <script defer src="/static/resilio/network.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="nav">
+      <a href="#overview" class="nav-logo"
+        ><span class="logo-pulse"></span>RESILIO<span class="edition"
+          >RELIEF COORDINATION</span
+        ></a
+      >
+      <div class="nav-controls">
+        <span id="connection" role="status">Connecting…</span
+        ><a id="loginLink" href="/access/" class="button account-signin"
+          >Sign in</a
+        ><a id="registerLink" href="/register/" class="button account-register"
+          >Join response</a
+        ><span id="account" class="account-chip" hidden>Public access</span
+        ><button id="logout" hidden>Sign out</button
+        ><button data-theme-toggle>Theme</button
+        ><button class="crisis-btn" id="crisisToggle">⚠ Crisis mode</button>
+      </div>
+    </header>
+    <div class="app-layout">
+      <aside class="workspace-nav">
+        <nav aria-label="Main navigation" id="navigation">
+          <a href="#overview">Overview</a><a href="#network">Live map</a
+          ><a href="#activity" hidden>My Activity</a
+          ><a href="#volunteer" hidden>Volunteer Desk</a
+          ><a href="#coordination" hidden>Officer Desk</a
+          ><a href="#shelters">Shelters</a
+          ><a href="#notifications" id="notificationsLink" hidden
+            >Notifications</a
+          ><a href="#sync">Sync Center</a
+          ><a href="#administration" hidden>Administration</a
+          ><a href="#profile" hidden>Profile</a>
+        </nav>
+      </aside>
+      <main id="main" tabindex="-1">
+        <div id="status" role="status" class="notice" hidden></div>
+        <div id="screen"></div>
+      </main>
+    </div>
+    <footer>
+      RESILIO / DISASTER RESOURCE COORDINATION
+      <span>Community · Volunteers · Relief organizations</span
+      ><button data-theme-system>Use device theme</button>
+    </footer>
+    <dialog id="editor" aria-labelledby="editorTitle">
+      <div class="dialog-head">
+        <h2 id="editorTitle">New record</h2>
+        <button type="button" data-close="editor" aria-label="Close form">
+          ✕
+        </button>
+      </div>
+      <p class="form-error" role="alert" id="editorError"></p>
+      <form id="resourceForm">
+        <input type="hidden" name="id" /><input
+          type="hidden"
+          name="kind"
+          value="request"
+        /><label>Canonical item<select name="item" required></select></label>
+        <p class="muted" id="unitHint"></p>
+        <div class="form-grid">
+          <label
+            >Quantity<input
+              name="quantity"
+              type="number"
+              min="0.01"
+              max="99999999"
+              step="0.01"
+              required /><span data-error="quantity"></span></label
+          ><label
+            >Area<input
+              name="area"
+              maxlength="100"
+              required
+              placeholder="e.g. Mirpur"
+          /></label>
+        </div>
+        <label id="urgencyLabel"
+          >Urgency<select name="urgency">
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+            <option value="critical">Critical</option>
+          </select></label
+        ><label id="expiryLabel" hidden
+          >Optional expiry<input name="expires_at" type="datetime-local" /><span
+            data-error="expires_at"
+          ></span></label
+        ><label
+          >Description<textarea
+            name="description"
+            maxlength="2000"
+            rows="3"
+          ></textarea>
+        </label>
+        <p class="muted">
+          Requests can be saved on this device when the server is unreachable.
+          Offers require a server connection.
+        </p>
+        <div class="actions">
+          <button class="btn-primary" type="submit">Save on server</button
+          ><button id="saveLocal" type="button">Save request on device</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="crisis" aria-labelledby="crisisTitle">
+      <div class="dialog-head">
+        <h2 id="crisisTitle">⚠ Crisis mode</h2>
+        <button data-close="crisis" aria-label="Exit crisis mode">
+          ✕ Exit
+        </button>
+      </div>
+      <p>
+        Choose a category to open a short, prefilled urgent request. Review the
+        item, quantity and area before saving.
+      </p>
+      <div class="crisis-buttons" id="crisisButtons"></div>
+      <p class="notice">
+        Server unreachable? Save a request on this device, then sync when
+        connected. This service does not contact emergency responders.
+      </p>
+    </dialog>
+    <dialog id="actionDialog" aria-labelledby="actionTitle">
+      <div class="dialog-head">
+        <h2 id="actionTitle">Action</h2>
+        <button data-close="actionDialog" aria-label="Close action">✕</button>
+      </div>
+      <p id="actionError" role="alert" class="form-error"></p>
+      <form id="actionForm"></form>
+    </dialog>
+    <noscript
+      ><p class="notice">
+        Enable JavaScript to use the coordination dashboard. Account forms still
+        work.
+      </p></noscript
+    >
+  </body>
+</html>
