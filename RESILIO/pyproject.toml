@@ -1,3 +1,20 @@
+[project]
+name = "resilio"
+version = "0.3.1"
+description = "Disaster resource coordination and volunteer management"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "Django==5.2.19",
+    "asgiref==3.13.0",
+    "sqlparse==0.6.1",
+    "dj-database-url==3.1.2",
+    "python-dotenv==1.2.4",
+    "psycopg[binary]==3.3.8",
+]
+
+[tool.uv]
+package = false
+
 [tool.vercel]
 entrypoint = "config.wsgi:application"
 
