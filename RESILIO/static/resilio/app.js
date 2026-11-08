@@ -13,6 +13,9 @@ const state = {
     area: "",
     urgency: "",
     availability: "",
+    division: "",
+    district: "",
+    upazila: "",
   },
 };
 function el(tag, text, cls) {
@@ -24,9 +27,13 @@ function el(tag, text, cls) {
 function button(text, fn, cls = "") {
   const b = el("button", text, cls);
   b.type = "button";
-  b.addEventListener("click", () =>
-    Promise.resolve(fn()).catch((error) => message(error.message, true)),
-  );
+  b.addEventListener("click", () => {
+    try {
+      Promise.resolve(fn()).catch((error) => message(error.message, true));
+    } catch (error) {
+      message(error.message, true);
+    }
+  });
   return b;
 }
 function append(parent, ...nodes) {
@@ -251,6 +258,8 @@ function renderScreen() {
   });
   const screens = {
     overview,
+    emergencies: emergencyDesk,
+    announcements: announcementDesk,
     network,
     coordination: officerDesk,
     activity,
@@ -300,7 +309,7 @@ function card(r) {
   c.append(
     el(
       "div",
-      `${r.area} · ${r.status}${r.urgency ? " / " + r.urgency : ""} · updated ${ago(r.updated_at)}`,
+      `${r.area}${r.district_name ? ", " + r.district_name : ""} · ${r.status}${r.urgency ? " / " + r.urgency : ""} · updated ${ago(r.updated_at)}`,
       "meta",
     ),
   );
@@ -348,6 +357,7 @@ function card(r) {
         ),
       ),
     );
+  recordFieldTools(c, r, actions);
   append(c, actions);
   return c;
 }
@@ -363,6 +373,9 @@ function filtered() {
           .toLowerCase()
           .includes(f.search.toLowerCase())) &&
       (!f.category || r.category === f.category) &&
+      (!f.division || r.division === f.division) &&
+      (!f.district || r.district === f.district) &&
+      (!f.upazila || r.upazila === f.upazila) &&
       (!f.area ||
         r.area.includes(f.area.toLowerCase().trim().replace(/\s+/g, " "))) &&
       (!f.urgency || r.urgency === f.urgency) &&
@@ -551,6 +564,15 @@ function overview() {
     append(l, n);
     filters.append(l);
   });
+  const geoFilters = el("div", null, "form-grid");
+  geoFilters.style.gridColumn = "1 / -1";
+  geoFields(geoFilters, state.filters, false, (division, district, upazila) => {
+    state.filters.upazila = upazila;
+    state.filters.division = division;
+    state.filters.district = district;
+    renderBoard();
+  });
+  filters.append(geoFilters);
   root.append(filters);
   const board = el("div", null, "resource-grid");
   board.id = "board";
@@ -763,6 +785,7 @@ function assignments(root, list) {
           "btn-primary",
         ),
       );
+    controls.append(button("Assignment messages", () => assignmentThread(a)));
     append(c, controls);
     grid.append(c);
   });
@@ -966,6 +989,15 @@ function shelters() {
               },
               { name: "area", label: "Area", required: true, maxlength: 100 },
               {
+                name: "district",
+                label: "District",
+                required: true,
+                options: [
+                  ["", "Select district"],
+                  ...geoCatalog().districts.map((d) => [d.code, d.name]),
+                ],
+              },
+              {
                 name: "total",
                 label: "Total capacity",
                 type: "number",
@@ -985,55 +1017,112 @@ function shelters() {
         "btn-primary",
       ),
     );
-  const grid = el("div", null, "shelter-grid");
-  (state.public?.shelters || []).forEach((s) => {
-    const c = el("article", null, "panel");
-    append(
-      c,
-      el("h2", s.name),
-      el("p", s.area, "meta"),
-      el("p", `${s.available} spaces available`, "quantity"),
-      el(
-        "p",
-        `${s.occupied} occupied + ${s.reserved} reserved / ${s.total} total`,
-      ),
-      el("p", s.description),
+  const filters = el("div", null, "form-grid");
+  const listRoot = el("div");
+  root.append(filters, listRoot);
+  const selection = {};
+  const controls = geoFields(
+    filters,
+    {},
+    false,
+    (division, district, upazila) => {
+      selection.division = division;
+      selection.district = district;
+      selection.upazila = upazila;
+      drawShelters();
+    },
+  );
+  root.append(
+    el(
+      "p",
+      "Distances use your last device reading and exact saved facility pins. They are straight-line distances, not road routes.",
+      "muted",
+    ),
+  );
+  let byDistance = false;
+  root.append(
+    button("Sort by distance", () => {
+      if (!geoState.position)
+        throw Error("Use my location on the Live map first.");
+      byDistance = !byDistance;
+      drawShelters();
+    }),
+  );
+  function drawShelters() {
+    listRoot.replaceChildren();
+    const grid = el("div", null, "shelter-grid");
+    const rows = (state.public?.shelters || []).filter(
+      (s) =>
+        (!selection.division || s.division === selection.division) &&
+        (!selection.district || s.district === selection.district) &&
+        (!selection.upazila || s.upazila === selection.upazila),
     );
-    if (s.demo) c.append(el("p", "FICTIONAL DEMONSTRATION DATA", "badge"));
-    if (state.private?.user.admin || state.private?.user.can_coordinate)
-      c.append(
-        button("Update capacity use", () =>
-          actionForm(
-            s.name,
-            [
-              {
-                name: "operation",
-                label: "Operation",
-                options: [
-                  ["check_in", "Check in unreserved guests"],
-                  ["check_out", "Check out guests"],
-                  ["reserve", "Reserve spaces"],
-                  ["release", "Release reserved spaces"],
-                  ["convert", "Check in reserved guests"],
-                ],
-              },
-              {
-                name: "quantity",
-                label: "Number of spaces",
-                type: "number",
-                min: 1,
-                step: 1,
-                required: true,
-              },
-            ],
-            (d) => api("shelter", { id: s.id, ...d }),
-          ),
-        ),
+    if (byDistance)
+      rows.sort(
+        (a, b) =>
+          (pointDistance(a.pin) ?? Infinity) -
+          (pointDistance(b.pin) ?? Infinity),
       );
-    grid.append(c);
-  });
-  if (!grid.children.length) empty(grid, "No facilities recorded.");
-  root.append(grid);
+    rows.forEach((s) => {
+      const c = el("article", null, "panel");
+      append(
+        c,
+        el("h2", s.name),
+        el("p", s.area, "meta"),
+        el("p", `${s.available} spaces available`, "quantity"),
+        el(
+          "p",
+          `${s.occupied} occupied + ${s.reserved} reserved / ${s.total} total`,
+        ),
+        el("p", s.description),
+      );
+      if (s.pin) {
+        c.append(button("View exact pin", () => showSavedPin(s.pin, s.name)));
+        const distance = pointDistance(s.pin);
+        if (distance !== null)
+          c.append(
+            el("p", distance.toFixed(1) + " km straight-line distance", "meta"),
+          );
+      } else c.append(el("p", "Distance unavailable — no exact pin", "meta"));
+      if (state.private?.user.can_coordinate)
+        c.append(button("Set shelter location", () => shelterLocationForm(s)));
+      if (s.demo) c.append(el("p", "FICTIONAL DEMONSTRATION DATA", "badge"));
+      if (state.private?.user.admin || state.private?.user.can_coordinate)
+        c.append(
+          button("Update capacity use", () =>
+            actionForm(
+              s.name,
+              [
+                {
+                  name: "operation",
+                  label: "Operation",
+                  options: [
+                    ["check_in", "Check in unreserved guests"],
+                    ["check_out", "Check out guests"],
+                    ["reserve", "Reserve spaces"],
+                    ["release", "Release reserved spaces"],
+                    ["convert", "Check in reserved guests"],
+                  ],
+                },
+                {
+                  name: "quantity",
+                  label: "Number of spaces",
+                  type: "number",
+                  min: 1,
+                  step: 1,
+                  required: true,
+                },
+              ],
+              (d) => api("shelter", { id: s.id, ...d }),
+            ),
+          ),
+        );
+      grid.append(c);
+    });
+    if (!grid.children.length) empty(grid, "No facilities recorded.");
+    listRoot.append(grid);
+  }
+  drawShelters();
 }
 function notifications() {
   const root = title(
@@ -1206,6 +1295,9 @@ function profile() {
     append(l, input);
     form.append(l);
   });
+  const geo = el("div", null, "form-grid");
+  geoFields(geo, u);
+  form.append(geo);
   const submit = el("button", "Save profile", "btn-primary");
   form.append(submit);
   form.onsubmit = async (e) => {
@@ -1239,8 +1331,32 @@ function openEditor(kind, r = null, category = null) {
     );
     return;
   }
+  if (!state.public.items?.length) {
+    message(
+      state.private?.user.admin
+        ? "The item catalog is empty. Run manage.py initialize_catalog with your project Python, then refresh."
+        : "Resource items have not been configured. Ask an administrator to initialize the item catalog, then refresh.",
+      true,
+    );
+    return;
+  }
   const form = $("#resourceForm");
   form.reset();
+  $("#resourcePinFields").replaceChildren();
+  pinFields(
+    $("#resourcePinFields"),
+    r ? storedPin(r) : null,
+    kind === "request" ? "private" : "public",
+  );
+  geoFields(
+    $("#resourceGeography"),
+    r || {
+      district: state.private?.user.district || geoState.detectedDistrict,
+      division: state.private?.user.division,
+      upazila: state.private?.user.upazila,
+    },
+    true,
+  );
   form.elements.namedItem("id").value = r?.id || "";
   form.elements.namedItem("kind").value = kind;
   activeClientId = clientId();
@@ -1383,6 +1499,7 @@ async function syncCenter() {
     "Sync Center",
     "Local help requests stay on this device. Removing a local entry does not cancel any request already saved on the server.",
   );
+  await offlineReadiness(root);
   root.append(
     el(
       "p",

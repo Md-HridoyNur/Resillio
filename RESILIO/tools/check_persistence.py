@@ -24,7 +24,7 @@ with tempfile.TemporaryDirectory(prefix="resilio-persistence-") as tmp:
     run(
         "shell",
         "-c",
-        "from django.contrib.auth.models import User; from coordination.models import Category,Item,Offer; u=User.objects.create_user('persistence_test'); c=Category.objects.create(name='water'); i=Item.objects.create(name='Drinking water',unit='L',category=c); Offer.objects.create(owner=u,item=i,quantity=50,area='mirpur')",
+        "from django.contrib.auth.models import User; from coordination.models import Category,Item,Offer; u=User.objects.create_user('persistence_test'); c,_=Category.objects.get_or_create(name='water'); i,_=Item.objects.get_or_create(name='Drinking water',defaults={'unit':'L','category':c}); Offer.objects.create(owner=u,item=i,quantity=50,area='mirpur')",
     )
     run(
         "shell",

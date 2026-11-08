@@ -1,3 +1,52 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RESILIO · Join the response</title><script src="/static/resilio/theme.js"></script><link rel="stylesheet" href="/static/resilio/app.css"><script defer src="/static/resilio/account.js"></script></head>
-<body class="account-page"><header class="nav"><a href="/" class="nav-logo"><span class="logo-pulse"></span>RESILIO<span class="edition">RELIEF COORDINATION</span></a><div class="nav-controls"><a href="/" class="button">Public dashboard</a><button data-theme-toggle>Theme</button></div></header><main class="access-layout"><section class="access-intro"><span class="section-tag">ONE COMMUNITY. A COORDINATED RESPONSE.</span><h1>Help starts<br>with connection.</h1><p>Bring resources, people and verified deliveries together. Work through your relief-center server over internet or the same local Wi-Fi.</p><div class="access-signal"><span class="logo-pulse"></span><span>Request → Match → Deliver → Confirm</span></div><p class="muted">Your account determines your permissions. Choosing a portal does not grant administrator access.</p></section><section class="access-content">{% block content %}{% endblock %}</section></main><footer>RESILIO / CONNECTED RELIEF COMMUNITIES<button data-theme-system>Use device theme</button></footer></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>RESILIO · Join the response</title>
+    <script src="/static/resilio/theme.js"></script>
+    <link rel="stylesheet" href="/static/resilio/app.css" />
+    <script defer src="/static/resilio/i18n.js"></script>
+    <script defer src="/static/resilio/account.js"></script>
+  </head>
+  <body class="account-page">
+    <header class="nav">
+      <a href="/" class="nav-logo"
+        ><span class="logo-pulse"></span>RESILIO<span class="edition"
+          >RELIEF COORDINATION</span
+        ></a
+      >
+      <div class="nav-controls">
+        <a href="/" class="button">Public dashboard</a
+        ><button data-language-toggle>বাংলা</button
+        ><button data-theme-toggle>Theme</button>
+      </div>
+    </header>
+    <main class="access-layout">
+      <section class="access-intro">
+        <span class="section-tag">ONE COMMUNITY. A COORDINATED RESPONSE.</span>
+        <h1>Help starts<br />with connection.</h1>
+        <p>
+          Bring resources, people and verified deliveries together. Work through
+          your relief-center server over internet or the same local Wi-Fi.
+        </p>
+        <div class="access-signal">
+          <span class="logo-pulse"></span
+          ><span>Request → Match → Deliver → Confirm</span>
+        </div>
+        <p class="muted">
+          Your account determines your permissions. Choosing a portal does not
+          grant administrator access.
+        </p>
+      </section>
+      <section class="access-content">
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+    <footer>
+      RESILIO / CONNECTED RELIEF COMMUNITIES<button data-theme-system>
+        Use device theme
+      </button>
+    </footer>
+  </body>
+</html>

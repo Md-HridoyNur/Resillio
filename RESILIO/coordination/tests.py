@@ -20,12 +20,13 @@ class Fixtures:
             "ops", password="Coursework-Pass!47", is_staff=True
         )
         Profile.objects.create(user=self.vol, role="volunteer")
-        self.category = Category.objects.create(name="water")
-        self.water = Item.objects.create(
-            name="Drinking water", unit="L", category=self.category
+        self.category, _ = Category.objects.get_or_create(name="water")
+        self.water, _ = Item.objects.get_or_create(
+            name="Drinking water", defaults={"unit": "L", "category": self.category}
         )
-        self.tablets = Item.objects.create(
-            name="Purification tablets", unit="tablets", category=self.category
+        self.tablets, _ = Item.objects.get_or_create(
+            name="Purification tablets",
+            defaults={"unit": "tablets", "category": self.category},
         )
         self.offer = Offer.objects.create(
             owner=self.donor, item=self.water, quantity=50, area="mirpur"
@@ -668,3 +669,108 @@ class CloudDeploymentTests(TestCase):
             with self.assertRaises(CommandError):
                 call_command("bootstrap_cloud_admin", verbosity=0)
         self.assertFalse(User.objects.filter(username="newowner").exists())
+
+
+class GeographyAndLocation(Fixtures, TestCase):
+    def setUp(self):
+        self.setup_data()
+        self.profile, _ = Profile.objects.get_or_create(user=self.member)
+
+    def location_payload(self, **changes):
+        return {
+            "enabled": True,
+            "latitude": 23.8103,
+            "longitude": 90.4125,
+            "accuracy": 25,
+            "captured_at": timezone.now().isoformat(),
+            **changes,
+        }
+
+    def test_seeded_geography_and_parent_validation(self):
+        from .services import validated_district
+        from django.core.exceptions import ValidationError
+
+        self.assertEqual(Division.objects.count(), 8)
+        self.assertEqual(District.objects.count(), 64)
+        self.assertEqual(District.objects.get(pk="dhaka").division_id, "dhaka")
+        with self.assertRaises(ValidationError):
+            validated_district({"district": "dhaka", "division": "sylhet"})
+        public = self.client.get("/api/public/").json()
+        self.assertEqual(len(public["geography"]["districts"]), 64)
+        self.assertIsNone(public["offers"][0]["district"])
+
+    def test_precise_location_requires_auth_and_separate_opt_in(self):
+        self.assertEqual(
+            self.client.post(
+                "/api/location/",
+                data=json.dumps(self.location_payload()),
+                content_type="application/json",
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.post(self.member, "location", self.location_payload()).status_code, 403
+        )
+        self.post(self.member, "presence", {"enabled": True})
+        self.assertEqual(
+            self.post(self.member, "location", self.location_payload()).status_code, 200
+        )
+        client = Client()
+        client.force_login(self.other)
+        response = client.get("/api/presence/")
+        location = response.json()["participants"][0]["location"]
+        self.assertAlmostEqual(float(location["latitude"]), 23.8103)
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertEqual(self.client.get("/api/presence/").status_code, 401)
+        self.assertNotIn("23.8103", self.client.get("/api/public/").content.decode())
+        self.profile.refresh_from_db()
+        self.assertTrue(self.profile.share_location)
+        self.assertIsNone(Profile.objects.filter(user=self.other).first())
+
+    def test_invalid_stale_and_revoked_coordinates(self):
+        self.post(self.member, "presence", {"enabled": True})
+        for changes in [
+            {"latitude": 91},
+            {"longitude": -181},
+            {"accuracy": -1},
+            {"accuracy": "NaN"},
+            {"latitude": "NaN"},
+            {"captured_at": (timezone.now() - timedelta(minutes=3)).isoformat()},
+        ]:
+            self.assertEqual(
+                self.post(
+                    self.member, "location", self.location_payload(**changes)
+                ).status_code,
+                400,
+                changes,
+            )
+        self.assertEqual(
+            self.post(self.member, "location", self.location_payload()).status_code, 200
+        )
+        Profile.objects.filter(pk=self.profile.pk).update(
+            location_updated_at=timezone.now() - timedelta(minutes=6)
+        )
+        client = Client()
+        client.force_login(self.other)
+        self.assertIsNone(
+            client.get("/api/presence/").json()["participants"][0]["location"]
+        )
+        self.post(self.member, "location", self.location_payload())
+        self.post(self.member, "location", {"enabled": False})
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.latitude)
+        self.assertFalse(self.profile.share_location)
+        self.post(self.member, "location", self.location_payload())
+        self.post(self.member, "presence", {"enabled": False})
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.longitude)
+        self.assertIsNone(self.profile.location_accuracy)
+
+
+class DefaultCatalog(TestCase):
+    def test_migrations_provide_items_without_demo_accounts(self):
+        self.assertEqual(Item.objects.count(), 8)
+        self.assertTrue(Item.objects.filter(name="Drinking water", unit="L").exists())
+        self.assertEqual(User.objects.count(), 0)
+        self.assertEqual(Offer.objects.count(), 0)
+        self.assertEqual(HelpRequest.objects.count(), 0)

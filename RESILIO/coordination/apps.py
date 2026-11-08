@@ -11,7 +11,14 @@ class CoordinationConfig(AppConfig):
 
         def clear_presence(sender, request, user, **kwargs):
             if user:
-                Profile.objects.filter(user=user).update(last_seen=None)
+                Profile.objects.filter(user=user).update(
+                    last_seen=None,
+                    share_location=False,
+                    latitude=None,
+                    longitude=None,
+                    location_accuracy=None,
+                    location_updated_at=None,
+                )
 
         user_logged_out.connect(
             clear_presence, dispatch_uid="resilio-clear-presence", weak=False

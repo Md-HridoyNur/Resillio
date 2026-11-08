@@ -1101,3 +1101,298 @@ footer {
     margin-top: 15px;
   }
 }
+/* Geographic map: bundled boundaries, explicit location permission and clear precision. */
+.bangladesh-panel .network-body {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+.bangladesh-panel #coordinationMap {
+  height: 540px;
+  width: 100%;
+  background: #dcebf0;
+  z-index: 0;
+}
+.bangladesh-panel .participant-list {
+  max-height: 605px;
+}
+.map-geography-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  padding: 0 20px;
+  background: var(--surface);
+}
+.location-info {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.location-info p {
+  margin: 5px 0;
+}
+.map-footer-actions {
+  padding: 0 20px 15px;
+}
+.geo-attribution {
+  padding: 10px 20px;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+.geo-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  font-size: 12px;
+  background: var(--bg2);
+}
+.geo-key:before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  margin-right: 8px;
+}
+.geo-key.self:before {
+  background: #1875e7;
+}
+.geo-key.person:before {
+  background: var(--officer);
+}
+.geo-key.resource:before {
+  background: #c3342b;
+}
+.geo-key.shelter:before {
+  background: #177c4c;
+}
+.geo-popup {
+  font:
+    13px/1.6 ResilioUI,
+    Arial,
+    sans-serif;
+  max-width: 250px;
+}
+.geo-popup p {
+  margin: 8px 0 0;
+}
+.district-shortcuts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  max-height: 180px;
+  overflow: auto;
+}
+.district-shortcuts button {
+  min-height: 32px;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--text);
+}
+.leaflet-tooltip {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #222;
+  font-size: 10px !important;
+  max-width: 90%;
+}
+.leaflet-control-attribution a {
+  color: #1453a2;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text);
+}
+.leaflet-container .leaflet-control-zoom a {
+  color: #111;
+}
+.leaflet-container :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.leaflet-popup-content {
+  margin: 14px 20px;
+}
+.bangladesh-panel .participant-row button {
+  font-size: 11px;
+  min-height: 32px;
+  margin-top: 6px;
+}
+.bangladesh-panel .participant-list h3 {
+  margin: 20px 0 10px;
+}
+.bangladesh-panel .participant-list h3:first-child {
+  margin-top: 0;
+}
+@media (max-width: 1000px) {
+  .bangladesh-panel .network-body {
+    grid-template-columns: 1fr;
+  }
+  .bangladesh-panel .participant-list {
+    max-height: 320px;
+  }
+  .bangladesh-panel #coordinationMap {
+    height: 490px;
+  }
+}
+@media (max-width: 700px) {
+  .map-geography-controls {
+    padding: 0 15px;
+    gap: 10px;
+  }
+  .bangladesh-panel #coordinationMap {
+    height: 430px;
+  }
+  .geo-legend {
+    gap: 9px;
+    padding: 10px 15px;
+    font-size: 11px;
+  }
+  .map-footer-actions {
+    padding: 0 15px 15px;
+  }
+  .bangladesh-panel .map-controls button {
+    font-size: 12px;
+  }
+  .leaflet-control-attribution {
+    font-size: 9px !important;
+  }
+  .location-info {
+    padding: 15px;
+  }
+  .map-geography-controls label {
+    font-size: 12px;
+  }
+}
+.pin-fields {
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin: 16px 0;
+  min-width: 0;
+  border-radius: 8px;
+}
+.pin-fields legend {
+  font-weight: 700;
+  padding: 0 8px;
+}
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.check-label input {
+  width: auto;
+  min-width: 20px;
+  height: 20px;
+}
+.pin-picker-map {
+  height: 420px;
+  width: 100%;
+  background: #dcebed;
+}
+#pinDialog {
+  width: min(900px, 94vw);
+}
+.thread-message {
+  padding: 12px;
+  border: 1px solid var(--border);
+  margin: 8px 0;
+  border-radius: 6px;
+}
+.message-thread {
+  max-height: 360px;
+  overflow: auto;
+}
+.thread-message p,
+.emergency-card p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.offline-readiness {
+  margin: 16px 0;
+}
+.emergency-card .badge {
+  background: var(--surface);
+  color: var(--critical);
+}
+html[lang="bn"] body {
+  font-family: "Nirmala UI", "Noto Sans Bengali", sans-serif;
+}
+html[lang="bn"] h1,
+html[lang="bn"] h2,
+html[lang="bn"] h3 {
+  font-family: "Nirmala UI", "Noto Sans Bengali", sans-serif;
+  letter-spacing: normal;
+  line-height: 1.5;
+}
+.pin-fields .actions {
+  flex-wrap: wrap;
+}
+.pin-fields input {
+  max-width: 100%;
+}
+.contact-detail {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.panel .badge {
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.panel,
+.form-grid > label,
+.pin-fields .form-grid > label {
+  min-width: 0;
+}
+.form-grid select {
+  min-width: 0;
+  max-width: 100%;
+}
+@font-face {
+  font-family: ResilioBengali;
+  src: url("fonts/bengali.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+body {
+  font-family: ResilioUI, ResilioBengali, Arial, sans-serif;
+}
+html[lang="bn"] body,
+html[lang="bn"] h1,
+html[lang="bn"] h2,
+html[lang="bn"] h3,
+html[lang="bn"] .badge,
+html[lang="bn"] .meta,
+html[lang="bn"] .section-tag,
+html[lang="bn"] .map-caption,
+html[lang="bn"] .geo-attribution {
+  font-family: ResilioBengali, ResilioUI, sans-serif;
+}
+html[lang="bn"] button,
+html[lang="bn"] input,
+html[lang="bn"] select,
+html[lang="bn"] textarea {
+  font-family: ResilioBengali, ResilioUI, sans-serif;
+}
+h1,
+h2,
+h3 {
+  font-family: ResilioDisplay, ResilioBengali, sans-serif;
+}
+html[lang="bn"] #connection,
+html[lang="bn"] .leaflet-container,
+html[lang="bn"] .leaflet-tooltip {
+  font-family: ResilioBengali, ResilioUI, sans-serif;
+}

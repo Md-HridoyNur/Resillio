@@ -161,14 +161,17 @@ w.fetch = async (url, options = {}) => {
   };
 };
 w.eval(fs.readFileSync(path.join(root, "static/resilio/theme.js"), "utf8"));
-require("node:vm").runInContext(
-  fs.readFileSync(path.join(root, "static/resilio/network.js"), "utf8"),
-  dom.getInternalVMContext(),
-);
-require("node:vm").runInContext(
-  fs.readFileSync(path.join(root, "static/resilio/app.js"), "utf8"),
-  dom.getInternalVMContext(),
-);
+for (const file of [
+  "localareas.js",
+  "geography.js",
+  "network.js",
+  "fieldops.js",
+  "app.js",
+])
+  require("node:vm").runInContext(
+    fs.readFileSync(path.join(root, "static/resilio", file), "utf8"),
+    dom.getInternalVMContext(),
+  );
 const wait = async (fn) => {
   for (let i = 0; i < 100; i++) {
     if (fn()) return;
@@ -211,6 +214,8 @@ const pass = (name) => {
   const form = d.querySelector("#resourceForm");
   form.elements.namedItem("quantity").value = "2";
   form.elements.namedItem("area").value = "Mirpur";
+  form.elements.namedItem("district").value = "dhaka";
+  form.elements.namedItem("district").dispatchEvent(new w.Event("change"));
   form.dispatchEvent(
     new w.SubmitEvent("submit", { bubbles: true, cancelable: true }),
   );
@@ -267,6 +272,8 @@ const pass = (name) => {
   clickText("+ Request assistance");
   form.elements.namedItem("quantity").value = "3";
   form.elements.namedItem("area").value = "uttara";
+  form.elements.namedItem("district").value = "dhaka";
+  form.elements.namedItem("district").dispatchEvent(new w.Event("change"));
   clickText("Save request on device");
   await wait(() => !d.querySelector("#editor").open);
   w.location.hash = "sync";

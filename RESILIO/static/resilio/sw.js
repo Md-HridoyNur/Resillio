@@ -1,6 +1,21 @@
 /* Explicit static allowlist only: no authenticated pages or API responses. */
-const VERSION = "resilio-assets-v2";
+const VERSION = "resilio-assets-v5";
 const ASSETS = [
+  "/static/resilio/fonts/bengali.ttf",
+  "/static/resilio/localareas.js",
+  "/static/resilio/fieldops.js",
+  "/static/resilio/i18n.js",
+  "/static/resilio/geography.js",
+  "/static/resilio/geo/divisions.geojson",
+  "/static/resilio/geo/districts.geojson",
+  "/static/resilio/geo/ATTRIBUTION.txt",
+  "/static/resilio/vendor/leaflet/leaflet.js",
+  "/static/resilio/vendor/leaflet/leaflet.css",
+  "/static/resilio/vendor/leaflet/images/layers.png",
+  "/static/resilio/vendor/leaflet/images/layers-2x.png",
+  "/static/resilio/vendor/leaflet/images/marker-icon.png",
+  "/static/resilio/vendor/leaflet/images/marker-icon-2x.png",
+  "/static/resilio/vendor/leaflet/images/marker-shadow.png",
   "/static/resilio/offline.html",
   "/static/resilio/app.css",
   "/static/resilio/app.js",

@@ -1,7 +1,15 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.db import transaction
-from coordination.models import Category, Item, Profile, Offer, HelpRequest, Shelter
+from coordination.models import (
+    Category,
+    Item,
+    Profile,
+    Offer,
+    HelpRequest,
+    Shelter,
+    District,
+)
 
 
 class Command(BaseCommand):
@@ -37,6 +45,7 @@ class Command(BaseCommand):
             Item.objects.get_or_create(
                 name=name, defaults={"category": c, "unit": unit}
             )
+        demo_district = District.objects.filter(pk="dhaka").first()
         users = {}
         for username, role in [
             ("demo_requester", "community"),
@@ -52,6 +61,7 @@ class Command(BaseCommand):
                 user.set_password(password)
                 user.save()
                 Profile.objects.create(
+                    district=demo_district,
                     user=user,
                     role=role,
                     area="mirpur",
@@ -66,6 +76,7 @@ class Command(BaseCommand):
             item=water,
             demo=True,
             defaults={
+                "district": demo_district,
                 "quantity": 50,
                 "area": "mirpur",
                 "description": "Fictional demonstration drinking water supply.",
@@ -76,6 +87,7 @@ class Command(BaseCommand):
             item=water,
             demo=True,
             defaults={
+                "district": demo_district,
                 "quantity": 20,
                 "area": "mirpur",
                 "urgency": "urgent",
@@ -92,6 +104,7 @@ class Command(BaseCommand):
                 item=Item.objects.get(name=name),
                 demo=True,
                 defaults={
+                    "district": demo_district,
                     "quantity": amount,
                     "area": loc,
                     "description": "Fictional demonstration supply.",
@@ -100,6 +113,7 @@ class Command(BaseCommand):
         Shelter.objects.get_or_create(
             name="Demo Community Hall",
             defaults={
+                "district": demo_district,
                 "area": "mirpur",
                 "total": 100,
                 "occupied": 20,

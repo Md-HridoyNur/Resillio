@@ -63,11 +63,18 @@ def main():
                     options["executable_path"] = os.environ["CHROMIUM_PATH"]
                 browser = pw.chromium.launch(**options)
                 context = browser.new_context(
-                    viewport={"width": 1440, "height": 1000}, color_scheme="dark"
+                    viewport={"width": 1440, "height": 1000},
+                    color_scheme="dark",
+                    geolocation={
+                        "latitude": 23.8103,
+                        "longitude": 90.4125,
+                        "accuracy": 25,
+                    },
+                    permissions=["geolocation"],
                 )
                 page = context.new_page()
                 errors = []
-                page.on("pageerror", lambda error: errors.append(str(error)))
+                page.on("pageerror", lambda error: errors.append(error.stack))
                 page.goto(url)
                 page.wait_for_selector(".resource-card")
                 assert page.locator("html").get_attribute("data-theme") == "dark"
@@ -266,17 +273,46 @@ def main():
                 navigate("network")
                 page.wait_for_selector('.participant-row:has-text("Field Team")')
                 assert "Relief Desk" in page.locator(".participant-list").inner_text()
-                page.get_by_role("button", name="Demo animation", exact=True).click()
+                page.wait_for_selector(".leaflet-container")
                 page.wait_for_function(
-                    "document.querySelector('#mapStatus').textContent.includes('SIMULATION')"
+                    "document.querySelector('#mapStatus').textContent.includes('boundaries loaded')"
                 )
-                first = page.locator("#coordinationMap").evaluate("(c)=>c.toDataURL()")
-                page.wait_for_timeout(250)
-                assert (
-                    page.locator("#coordinationMap").evaluate("(c)=>c.toDataURL()")
-                    != first
+                page.get_by_role("button", name="Use my location", exact=True).click()
+                page.wait_for_function(
+                    "document.querySelector('#locationInfo').textContent.includes('23.810300')"
                 )
-                page.get_by_role("button", name="Live activity", exact=True).click()
+                assert "Dhaka" in page.locator("#locationInfo").inner_text()
+                assert page.evaluate(
+                    "async()=>!(await(await fetch('/api/me/')).json()).user.share_location"
+                )
+                page.get_by_role("button", name="Share my pin", exact=True).click()
+                page.locator("#actionForm [name=confirmation]").fill("SHARE")
+                page.locator("#actionForm").get_by_role(
+                    "button", name="Save on server", exact=True
+                ).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                assert peer_page.evaluate(
+                    "async()=> (await(await fetch('/api/presence/')).json()).participants.some(p=>p.location&&p.location.latitude==23.8103)"
+                )
+                page.locator(".map-geography-controls [name=division]").select_option(
+                    "dhaka"
+                )
+                page.locator(".map-geography-controls [name=district]").select_option(
+                    "dhaka"
+                )
+                page.wait_for_function(
+                    "document.querySelector('.participant-list').textContent.includes('Relief Desk')"
+                )
+                page.get_by_role("button", name="All Bangladesh", exact=True).click()
+                page.get_by_role(
+                    "button", name="Stop sharing my pin", exact=True
+                ).click()
+                page.wait_for_function(
+                    "document.querySelector('.map-footer-actions').textContent.includes('Share my pin')"
+                )
+                assert peer_page.evaluate(
+                    "async()=> !(await(await fetch('/api/presence/')).json()).participants.some(p=>p.location)"
+                )
                 peer_page.get_by_role(
                     "button", name="Stop sharing my presence", exact=True
                 ).click()
@@ -292,9 +328,239 @@ def main():
                 assert page.evaluate(
                     "async()=>{for(const k of await caches.keys()){for(const r of await (await caches.open(k)).keys()){if(new URL(r.url).pathname.startsWith('/api/'))return false}}return true}"
                 )
+                panel = page.locator(".bangladesh-panel")
+                panel.locator("[name=division]").select_option("sylhet")
+                assert panel.locator("[name=district] option").count() == 5
+                panel.locator("[name=district]").select_option("sylhet")
+                assert (
+                    panel.locator(".participant-list h3").first.inner_text() == "Sylhet"
+                )
+                panel.get_by_role("button", name="All Bangladesh", exact=True).click()
+                page.get_by_role("button", name="Use my location", exact=True).click()
+                page.wait_for_function(
+                    "document.querySelector('#locationInfo').textContent.includes('23.810300')"
+                )
+                context.set_geolocation(
+                    {"latitude": 23.8203, "longitude": 90.4225, "accuracy": 40}
+                )
+                page.wait_for_function(
+                    "document.querySelector('#locationInfo').textContent.includes('23.820300')"
+                )
+                assert peer_page.evaluate(
+                    "async()=> !(await(await fetch('/api/presence/')).json()).participants.some(p=>p.location)"
+                )
+                context.set_offline(True)
+                page.reload()
+                page.wait_for_selector(".leaflet-container .leaflet-overlay-pane path")
+                assert "64 districts" in page.locator(".participant-list").inner_text()
+                context.set_offline(False)
+                page.reload()
+                page.wait_for_selector(".leaflet-container .leaflet-overlay-pane path")
+                denied = browser.new_context(permissions=[])
+                denied.grant_permissions([])
+                denied_page = denied.new_page()
+                denied_page.goto(url + "/#network")
+                denied_page.wait_for_selector(".leaflet-container")
+                denied_page.get_by_role(
+                    "button", name="Use my location", exact=True
+                ).click()
+                denied_page.wait_for_function(
+                    "document.querySelector('#mapStatus').textContent.includes('denied')"
+                )
+                denied_page.locator(
+                    ".map-geography-controls [name=division]"
+                ).select_option("khulna")
+                denied_page.locator(
+                    ".map-geography-controls [name=district]"
+                ).select_option("jashore")
+                assert (
+                    denied_page.locator(".participant-list h3").first.inner_text()
+                    == "Jashore"
+                )
+                denied.close()
+                print(
+                    "PASS district drilldown, real location updates, denied permission fallback and offline geographic map"
+                )
                 peer.close()
                 print(
-                    "PASS two-browser opt-in presence, opt-out, moving simulation and private-cache isolation"
+                    "PASS two-browser opt-in presence, opt-out, real geographic map and private device geolocation and private-cache isolation"
+                )
+                # Field coordination feature checks use the same isolated temporary server.
+                navigate("overview")
+                page.locator("[data-language-toggle]").click()
+                page.wait_for_function("document.documentElement.lang==='bn'")
+                assert (
+                    page.locator('#navigation a[href="#emergencies"]').inner_text()
+                    == "জরুরি সহায়তা"
+                )
+                page.reload()
+                page.wait_for_function("document.documentElement.lang==='bn'")
+                page.locator("[data-language-toggle]").click()
+                page.wait_for_function("document.documentElement.lang==='en'")
+                page.get_by_role("button", name="Offer supplies", exact=True).click()
+                form = page.locator("#resourceForm")
+                form.locator("[name=item]").select_option(label="Drinking water (L)")
+                form.locator("[name=quantity]").fill("3")
+                form.locator("[name=area]").fill("Test ward")
+                form.locator("[name=district]").select_option("dhaka")
+                upazila = (
+                    form.locator("[name=upazila] option").nth(1).get_attribute("value")
+                )
+                form.locator("[name=upazila]").select_option(upazila)
+                form.get_by_role("button", name="Choose on map", exact=True).click()
+                page.locator(
+                    "#pinDialog .leaflet-container .leaflet-overlay-pane path"
+                ).first.wait_for()
+                page.locator("#pinDialog .leaflet-container").click(
+                    position={"x": 160, "y": 180}
+                )
+                page.locator("#pinDialog").get_by_role(
+                    "button", name="Use selected point", exact=True
+                ).click()
+                page.wait_for_selector("#pinDialog", state="detached")
+                form.locator("[name=latitude]").fill("23.810300")
+                form.locator("[name=longitude]").fill("90.412500")
+                form.locator("[name=pin_label]").fill("Test collection point")
+                form.locator("[name=pin_consent]").check()
+                form.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#editor').open")
+                assert page.evaluate(
+                    "async()=> (await(await fetch('/api/public/')).json()).offers.some(x=>x.pin?.label==='Test collection point')"
+                )
+                page.locator(".filter-bar [name=district]").select_option("dhaka")
+                page.locator(".filter-bar [name=upazila]").select_option(upazila)
+                assert page.locator(".resource-card").count() == 1
+                page.locator(".filter-bar [name=upazila]").select_option("")
+                page.locator(".filter-bar [name=division]").select_option("")
+                navigate("shelters")
+                page.get_by_role("button", name="Add shelter", exact=True).click()
+                af = page.locator("#actionForm")
+                af.locator("[name=name]").fill("Browser field shelter")
+                af.locator("[name=area]").fill("Test ward")
+                af.locator("[name=district]").select_option("dhaka")
+                af.locator("[name=total]").fill("50")
+                af.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                shelter = page.locator(".shelter-grid .panel").filter(
+                    has_text="Browser field shelter"
+                )
+                shelter.get_by_role(
+                    "button", name="Set shelter location", exact=True
+                ).click()
+                af.locator("[name=upazila]").select_option(upazila)
+                af.locator("[name=latitude]").fill("23.8203")
+                af.locator("[name=longitude]").fill("90.4225")
+                af.locator("[name=pin_consent]").check()
+                af.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                shelter.get_by_role(
+                    "button", name="View exact pin", exact=True
+                ).wait_for()
+                navigate("network")
+                page.get_by_role("button", name="Use my location", exact=True).click()
+                page.wait_for_function(
+                    "document.querySelector('#locationInfo').textContent.includes('23.820300')"
+                )
+                navigate("shelters")
+                page.get_by_role("button", name="Sort by distance", exact=True).click()
+                assert (
+                    "km straight-line distance"
+                    in page.locator(".shelter-grid").inner_text()
+                )
+                member_context = browser.new_context()
+                member_page = member_context.new_page()
+                member_page.on("pageerror", lambda error: errors.append(error.stack))
+                member_page.goto(url + "/accounts/login/")
+                member_page.locator("[name=username]").fill("demo_requester")
+                member_page.locator("[name=password]").fill(password)
+                member_page.get_by_role("button", name="Sign in", exact=True).click()
+                member_page.wait_for_selector("#account:not([hidden])")
+                member_page.locator('#navigation a[href="#emergencies"]').click()
+                member_page.get_by_role(
+                    "button", name="Request urgent assistance", exact=True
+                ).click()
+                mf = member_page.locator("#actionForm")
+                mf.locator("[name=kind]").select_option("evacuation")
+                mf.locator("[name=people]").fill("3")
+                mf.locator("[name=area]").fill("Test ward")
+                mf.locator("[name=description]").fill("Browser evacuation case")
+                mf.locator("[name=contact]").fill("Private test contact")
+                mf.locator("[name=latitude]").fill("23.8103")
+                mf.locator("[name=longitude]").fill("90.4125")
+                mf.locator("[name=pin_consent]").check()
+                mf.get_by_role("button", name="Send emergency case", exact=True).click()
+                member_page.wait_for_function(
+                    "!document.querySelector('#actionDialog').open"
+                )
+                member_page.locator(".emergency-card").filter(
+                    has_text="Browser evacuation case"
+                ).wait_for()
+                page.reload()
+                page.wait_for_selector("#navigation")
+                navigate("emergencies")
+                case = page.locator(".emergency-card").filter(
+                    has_text="Browser evacuation case"
+                )
+                case.get_by_role("button", name="Acknowledge", exact=True).click()
+                case.get_by_role("button", name="Assign volunteer", exact=True).click()
+                af.locator("[name=volunteer]").select_option(label="demo_volunteer")
+                af.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                case.get_by_role("button", name="Mark resolved", exact=True).click()
+                af.locator("[name=confirmation]").fill("RESOLVED")
+                af.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                case.get_by_text("RESOLVED", exact=True).wait_for()
+                assert page.evaluate(
+                    "async()=>!JSON.stringify(await(await fetch('/api/public/')).json()).includes('Private test contact')"
+                )
+                navigate("announcements")
+                page.get_by_role(
+                    "button", name="Publish announcement", exact=True
+                ).click()
+                af.locator("[name=title]").fill("Browser announcement")
+                af.locator("[name=body]").fill("Live map")
+                af.locator("[name=expires_at]").fill(
+                    (
+                        __import__("datetime").datetime.now()
+                        + __import__("datetime").timedelta(hours=2)
+                    ).strftime("%Y-%m-%dT%H:%M")
+                )
+                af.get_by_role("button", name="Save on server", exact=True).click()
+                page.wait_for_function("!document.querySelector('#actionDialog').open")
+                page.locator("[data-language-toggle]").click()
+                page.wait_for_function("document.documentElement.lang==='bn'")
+                page.locator("[data-user-content]").filter(
+                    has_text="Live map"
+                ).wait_for()
+                page.locator("[data-language-toggle]").click()
+                navigate("activity")
+                page.get_by_role(
+                    "button", name="Assignment messages", exact=True
+                ).first.click()
+                af.locator("[name=body]").fill("Browser private assignment message")
+                af.get_by_role("button", name="Send message", exact=True).click()
+                page.locator(".thread-message").filter(
+                    has_text="Browser private assignment message"
+                ).wait_for()
+                page.locator("[data-close=actionDialog]").click()
+                member_page.locator('#navigation a[href="#activity"]').click()
+                member_page.get_by_role(
+                    "button", name="Assignment messages", exact=True
+                ).first.click()
+                member_page.locator(".thread-message").filter(
+                    has_text="Browser private assignment message"
+                ).wait_for()
+                member_context.close()
+                navigate("sync")
+                page.locator(".offline-readiness").get_by_text(
+                    "Boundary map saved for offline use", exact=True
+                ).wait_for()
+                assert page.evaluate(
+                    "async()=>{for(const k of await caches.keys()){for(const r of await(await caches.open(k)).keys()){if(new URL(r.url).pathname.startsWith('/api/'))return false}}return true}"
+                )
+                print(
+                    "PASS field pins, nested map picker, upazila filtering, Bangla persistence, private emergency lifecycle, announcements, assignment messages and offline readiness"
                 )
                 for width in [1440, 390]:
                     page.set_viewport_size({"width": width, "height": 900})
@@ -307,6 +573,9 @@ def main():
                         page.wait_for_selector("#navigation")
                         for screen in [
                             "overview",
+                            "network",
+                            "emergencies",
+                            "announcements",
                             "activity",
                             "volunteer",
                             "shelters",
@@ -316,6 +585,18 @@ def main():
                             "profile",
                         ]:
                             navigate(screen)
+                            if not page.evaluate(
+                                "document.documentElement.scrollWidth<=innerWidth"
+                            ):
+                                print(
+                                    "OVERFLOW",
+                                    width,
+                                    theme,
+                                    screen,
+                                    page.evaluate(
+                                        "[...document.querySelectorAll('main *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>[e.tagName,e.className,e.textContent.slice(0,80)])"
+                                    ),
+                                )
                             assert page.evaluate(
                                 "document.documentElement.scrollWidth<=innerWidth"
                             ), (width, theme, screen)
@@ -335,6 +616,26 @@ def main():
                             )
                         page.keyboard.press("Escape")
                         assert not page.locator("#editor").is_visible()
+                for width in [1440, 390]:
+                    page.set_viewport_size({"width": width, "height": 1000})
+                    page.locator("[data-language-toggle]").click()
+                    page.wait_for_function("document.documentElement.lang==='bn'")
+                    for screen in ["emergencies", "announcements", "sync", "network"]:
+                        navigate(screen)
+                        page.evaluate("document.fonts.ready")
+                        assert page.evaluate(
+                            "document.documentElement.scrollWidth<=innerWidth"
+                        ), ("Bangla", width, screen)
+                        if os.getenv("RESILIO_QA_SCREENSHOTS"):
+                            shots = Path(os.environ["RESILIO_QA_SCREENSHOTS"])
+                            shots.mkdir(parents=True, exist_ok=True)
+                            page.screenshot(
+                                path=str(shots / f"field-{width}-bn-{screen}.png"),
+                                full_page=True,
+                            )
+                    page.locator("[data-language-toggle]").click()
+                    page.wait_for_function("document.documentElement.lang==='en'")
+                print("PASS Bangla field screens, local font loading and mobile layout")
                 if os.getenv("RESILIO_QA_SCREENSHOTS"):
                     shots = Path(os.environ["RESILIO_QA_SCREENSHOTS"])
                     shots.mkdir(parents=True, exist_ok=True)
@@ -363,6 +664,14 @@ def main():
                                 path=str(shots / f"{label}-{theme}-form.png")
                             )
                             page.keyboard.press("Escape")
+                            navigate("network")
+                            page.wait_for_selector(
+                                ".leaflet-container .leaflet-overlay-pane path"
+                            )
+                            page.screenshot(
+                                path=str(shots / f"{label}-{theme}-map.png"),
+                                full_page=True,
+                            )
                             navigate("administration")
                             page.screenshot(
                                 path=str(shots / f"{label}-{theme}-admin.png"),

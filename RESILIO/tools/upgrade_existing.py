@@ -74,6 +74,9 @@ def main():
         subprocess.run(
             [str(python), "manage.py", "migrate", "--noinput"], cwd=target, check=True
         )
+        subprocess.run(
+            [str(python), "manage.py", "initialize_catalog"], cwd=target, check=True
+        )
         print("Upgrade complete. Your accounts, passwords and database were preserved.")
         print(
             "Start with the same manage.py runserver command. Reload the browser after the new assets install."

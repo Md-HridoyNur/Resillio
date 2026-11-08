@@ -39,6 +39,8 @@ The `0002` migration adds officer approval and opt-in participant presence; it d
 - Removed the Operations sidebar/numbered labels; navigation now follows the account role.
 - Officer approval/revocation, officer desk, assignment to volunteers and shelter controls.
 - Live coordination map on Overview and a full Live map screen, with accessible area/participant lists.
-- Presence sharing is opt-in. Signed-in participants can see shared labels, roles, chosen areas and recent heartbeats through the same server. It is not GPS tracking.
-- Demo animation recreates the moving-node presentation with an explicit simulation label.
+- Presence sharing and browser device-pin sharing are separate opt-in actions. Private request pins are restricted to authorized coordination users.
+- The geographic map uses real division/district polygons, actual creator-provided facility/pickup pins and explicit device location. Decorative movement is removed.
 - Hosted internet and same-Wi-Fi laptop-server operation use the same Django endpoints. Server-unreachable request storage and duplicate-safe synchronization remain in place.
+
+Migration 0004 adds the geographic catalog; 0005 adds locality/pin fields, emergency cases, announcements, message threads and freshness timestamps. Both preserve saved accounts and records. See FIELD_UPGRADE.md for the latest eight-step walkthrough.

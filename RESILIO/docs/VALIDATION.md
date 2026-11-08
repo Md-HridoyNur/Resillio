@@ -7,7 +7,7 @@ Executed 7 November 2026 in a Linux workspace using Python 3.12, Django 5.2.19, 
 |---|---|---|
 | Django system check | PASS | No issues |
 | Migration consistency | PASS | `makemigrations --check --dry-run`: no changes detected |
-| Backend suite | PASS, 29 tests | `coordination/tests.py`, including officer access and presence restrictions |
+| Backend suite | PASS, 42 tests | `coordination/tests.py`, including officer access and presence restrictions |
 | On-disk SQLite concurrency | PASS, additional run | Two simultaneous HTTP reservation requests against an actual temporary SQLite file; one succeeds, the other rejects/conflicts; reserved total 15 L against 20 L need |
 | Theme behavior | PASS, 9 checks | `tools/test_theme.cjs`; first-visit preferences, manual persistence/reload, system changes, reset, invalid storage values, blocked localStorage, accessible toggle state |
 | Frontend DOM behavior | PASS, 12 checks | `tools/test_dom.cjs`; safe text rendering, searches, dialog payloads, crisis prefill, canonical units, screens, IndexedDB pending entries, sync identity reuse and wrong-account prevention |
@@ -21,7 +21,7 @@ Executed 7 November 2026 in a Linux workspace using Python 3.12, Django 5.2.19, 
 | Persistence | PASS | Inventory written in one Python/Django process, read and asserted in a separate process using the same temporary on-disk SQLite database |
 | Three access portals and officer approval | PASS | Real browser registration of a pending officer, administrator approval, saved-role portal checks in backend tests |
 | Live presence across two browser sessions | PASS | Admin and volunteer opt in with different labels; both appear through the same Django server; volunteer opt-out removes the participant |
-| Animated simulation and cache privacy | PASS | Real canvas image changes while simulation runs; explicit SIMULATION banner; Cache API contains no private API responses |
+| Geographic map and cache privacy | PASS | Real Leaflet polygons, district selection, device location, explicit shared pin opt-in/removal; Cache API contains no private API responses |
 | In-place upgrade from version 1 | PASS | Original ZIP migrated in a temporary existing installation; updater creates backup; existing administrator/password, 50 L inventory and .local-secret preserved |
 | Original source preservation | PASS | All three `original-base/` copies byte-compared with the uploads |
 | Artifact hygiene | PASS | ZIP excludes runtime database/secret, caches, dependencies and virtual environments |
@@ -85,3 +85,22 @@ Header account actions, three-portal access page, login and officer registration
 The SQLite integration suite now has 29 passing tests, including cloud catalog initialization and private administrator bootstrap validation, repeatability, no password reset and refusal to elevate an existing public user. `tools/test_cloud_settings.py` passed subprocess checks for local SQLite fallback, PostgreSQL URL parsing, required HTTPS/SSL and secrets, exact automatic hosts/origins, isolated preview DB configuration and unsafe setting rejection. A fresh temporary database ran the Vercel build hook twice, applied migrations 0001–0003, initialized eight catalog items and retained the original bootstrap password. Static collection succeeded. The local real-browser delivery, offline sync, officer approval, two-browser presence and responsive theme suite still passes.
 
 Actual Vercel deployment, hosted Neon connectivity and native PostgreSQL contention are pending connection to the user's own accounts. A native PostgreSQL server could not start under the available process permissions; these are not reported as executed tests. See `VERCEL_TECHNICAL.md`.
+
+## Dependency-manifest correction
+Vercel selected pyproject.toml, whose initial version contained tool settings but no project dependencies. The manifest now explicitly declares Python 3.12 and all six pinned direct dependencies, matching requirements.txt. A new isolated environment installed dependencies using uv sync, successfully imported Django/database packages and completed tools/vercel_build.py locally. This fixes the observed missing-django build step; subsequent hosted deployment stages still require validation on Vercel.
+
+## Bangladesh map validation
+32 backend tests pass, including migration-seeded geography (8/64), parent validation, authentication and separate consent for coordinates, finite bounds, stale timestamps, fresh-only disclosure and coordinate removal. Twelve DOM workflow checks pass. The real browser suite checks district drilldown, simulated browser-device location updates (not physical GPS accuracy), private default, shared-pin opt-in/removal across two sessions, denied permission with manual selection, offline map reload and private-cache exclusion. It also checks the existing delivery workflow and both themes at desktop/mobile widths. No physical phone GPS, Bluetooth, disconnected mesh, live OSM tile availability or production PostgreSQL deployment was exercised in this local run.
+
+A separate migration-upgrade check created an existing account and offer on schema 0003, then applied 0004 and verified unchanged password hash, owner, quantity and free-text area, with a null district pending manual selection. Cloud configuration checks also pass.
+
+## Field coordination validation
+40 backend tests pass, including eight new permission/workflow checks for pins, locality-parent validation, emergency state transitions and duplicate retry, announcement expiry/revocation, participant-only messages, database pin bounds and stock-preserving reconfirmation. The browser suite additionally exercises nested map pin picking, public offer/facility pins, upazila filtering, Bangla persistence and unchanged user content, a private emergency through resolution, announcement publishing, two-session assignment messaging and offline readiness. Desktop/mobile light/dark layouts and Bangla field screens are checked. No actual government dispatch, native mesh transport or live PostgreSQL deployment was tested.
+
+A separate 0004-to-0005 migration check retained a pre-existing account/password
+hash, district, item and 42-unit offer. Newly added pins stayed empty and old
+records stayed unconfirmed rather than receiving invented confirmation times.
+
+Fresh-install regression: migration 0006 supplies all eight items without creating accounts, requests or offers; startup scripts also initialize the catalog. Existing catalog values are retained.
+
+Windows encoding regression: public data loads the full Bangla directory and item catalog under a simulated cp1252 default; the directory read explicitly specifies UTF-8.

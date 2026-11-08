@@ -1,5 +1,10 @@
 from django.contrib import admin
 from .models import (
+    Division,
+    District,
+    EmergencyCase,
+    Announcement,
+    AssignmentMessage,
     Profile,
     Category,
     Item,
@@ -27,6 +32,11 @@ class OperationalReadOnly(admin.ModelAdmin):
 
 
 for model in [
+    Division,
+    District,
+    EmergencyCase,
+    Announcement,
+    AssignmentMessage,
     Profile,
     Category,
     Item,

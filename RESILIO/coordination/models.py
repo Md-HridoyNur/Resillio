@@ -8,7 +8,37 @@ U = settings.AUTH_USER_MODEL
 ACTIVE = ["assigned", "in_progress", "awaiting_confirmation"]
 
 
+class Division(models.Model):
+    code = models.SlugField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=60, unique=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class District(models.Model):
+    code = models.SlugField(max_length=40, primary_key=True)
+    name = models.CharField(max_length=80, unique=True)
+    division = models.ForeignKey(
+        Division, on_delete=models.PROTECT, related_name="districts"
+    )
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Profile(models.Model):
+    upazila = models.CharField(max_length=20, blank=True)
     user = models.OneToOneField(U, on_delete=models.CASCADE)
     role = models.CharField(
         max_length=12,
@@ -25,6 +55,45 @@ class Profile(models.Model):
     share_presence = models.BooleanField(default=False)
     public_label = models.CharField(max_length=40, blank=True)
     last_seen = models.DateTimeField(null=True, blank=True, db_index=True)
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, null=True, blank=True
+    )
+    share_location = models.BooleanField(default=False)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
+    location_accuracy = models.FloatField(null=True, blank=True)
+    location_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        latitude__isnull=True,
+                        longitude__isnull=True,
+                        location_accuracy__isnull=True,
+                        location_updated_at__isnull=True,
+                    )
+                    | Q(
+                        latitude__isnull=False,
+                        longitude__isnull=False,
+                        location_accuracy__isnull=False,
+                        latitude__gte=-90,
+                        latitude__lte=90,
+                        longitude__gte=-180,
+                        longitude__lte=180,
+                        location_accuracy__gte=0,
+                        location_accuracy__lte=100000,
+                        location_updated_at__isnull=False,
+                    )
+                ),
+                name="profile_location_bounds",
+            )
+        ]
 
 
 class Category(models.Model):
@@ -44,6 +113,18 @@ class Item(models.Model):
 
 
 class Record(models.Model):
+    upazila = models.CharField(max_length=20, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
+    pin_label = models.CharField(max_length=160, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, null=True, blank=True
+    )
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     area = models.CharField(max_length=100, db_index=True)
@@ -67,8 +148,22 @@ class Record(models.Model):
         abstract = True
         constraints = [
             models.CheckConstraint(
+                condition=(
+                    Q(latitude__isnull=True, longitude__isnull=True)
+                    | Q(
+                        latitude__isnull=False,
+                        longitude__isnull=False,
+                        latitude__gte=-90,
+                        latitude__lte=90,
+                        longitude__gte=-180,
+                        longitude__lte=180,
+                    )
+                ),
+                name="%(class)s_pin_bounds",
+            ),
+            models.CheckConstraint(
                 condition=Q(quantity__gt=0), name="%(class)s_positive"
-            )
+            ),
         ]
 
 
@@ -213,6 +308,18 @@ class Report(models.Model):
 
 
 class Shelter(models.Model):
+    upazila = models.CharField(max_length=20, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
+    pin_label = models.CharField(max_length=160, blank=True)
+
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, null=True, blank=True
+    )
     name = models.CharField(max_length=120, unique=True)
     area = models.CharField(max_length=100, db_index=True)
     total = models.PositiveIntegerField()
@@ -230,7 +337,21 @@ class Shelter(models.Model):
             models.CheckConstraint(
                 condition=Q(total__gte=F("occupied") + F("reserved")),
                 name="shelter_capacity",
-            )
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(latitude__isnull=True, longitude__isnull=True)
+                    | Q(
+                        latitude__isnull=False,
+                        longitude__isnull=False,
+                        latitude__gte=-90,
+                        latitude__lte=90,
+                        longitude__gte=-180,
+                        longitude__lte=180,
+                    )
+                ),
+                name="%(class)s_pin_bounds",
+            ),
         ]
 
 
@@ -251,5 +372,104 @@ class CoordinationLock(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=Q(id=1), name="coordination_lock_singleton"
+            )
+        ]
+
+
+class EmergencyCase(models.Model):
+    owner = models.ForeignKey(
+        U, on_delete=models.PROTECT, related_name="emergency_cases"
+    )
+    district = models.ForeignKey(District, on_delete=models.PROTECT)
+    upazila = models.CharField(max_length=20, blank=True)
+    area = models.CharField(max_length=100)
+    kind = models.CharField(
+        max_length=20,
+        choices=[
+            (x, x.title())
+            for x in ["medical", "trapped", "evacuation", "flood", "other"]
+        ],
+    )
+    people = models.PositiveIntegerField()
+    description = models.TextField(max_length=2000)
+    contact = models.CharField(max_length=80, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
+    pin_label = models.CharField(max_length=160, blank=True)
+    status = models.CharField(
+        max_length=20,
+        default="received",
+        choices=[
+            (x, x.replace("_", " ").title())
+            for x in ["received", "acknowledged", "assigned", "resolved", "cancelled"]
+        ],
+    )
+    assigned_to = models.ForeignKey(
+        U,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="emergency_assignments",
+    )
+    client_id = models.UUIDField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(latitude__isnull=True, longitude__isnull=True)
+                    | Q(
+                        latitude__isnull=False,
+                        longitude__isnull=False,
+                        latitude__gte=-90,
+                        latitude__lte=90,
+                        longitude__gte=-180,
+                        longitude__lte=180,
+                    )
+                ),
+                name="%(class)s_pin_bounds",
+            ),
+            models.UniqueConstraint(
+                fields=["owner", "client_id"], name="emergency_client_unique"
+            ),
+            models.CheckConstraint(
+                condition=Q(people__gte=1, people__lte=10000),
+                name="emergency_people_bounds",
+            ),
+        ]
+
+
+class Announcement(models.Model):
+    author = models.ForeignKey(U, on_delete=models.PROTECT)
+    district = models.ForeignKey(
+        District, null=True, blank=True, on_delete=models.PROTECT
+    )
+    title = models.CharField(max_length=160)
+    body = models.TextField(max_length=3000)
+    expires_at = models.DateTimeField()
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AssignmentMessage(models.Model):
+    assignment = models.ForeignKey(
+        Assignment, on_delete=models.PROTECT, related_name="messages"
+    )
+    sender = models.ForeignKey(U, on_delete=models.PROTECT)
+    body = models.TextField(max_length=1500)
+    client_id = models.UUIDField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["assignment", "sender", "client_id"],
+                name="assignment_message_client_unique",
             )
         ]

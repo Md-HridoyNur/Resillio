@@ -119,6 +119,8 @@ def resource(user, data):
     obj.quantity = qty
     obj.area = loc
     obj.description = desc
+    if "district" in data:
+        obj.district = validated_district(data)
     if kind == "offer":
         expiry = data.get("expires_at")
         date = parse_datetime(expiry) if expiry else None
@@ -136,6 +138,10 @@ def resource(user, data):
         obj.urgency = urgency
         if cid:
             obj.client_id = cid
+    from .fieldops import apply_place
+
+    apply_place(obj, data)
+    obj.confirmed_at = timezone.now()
     obj.full_clean()
     obj.save()
     audit(user, "resource saved", obj)
@@ -249,6 +255,7 @@ def shelter(user, data):
     require(coordinator(user))
     if not data.get("id"):
         obj = Shelter(
+            district=validated_district(data) if "district" in data else None,
             name=text(data, "name", 120),
             area=area(text(data, "area", 100)),
             total=quantity(data.get("total"), "total", True),
@@ -276,6 +283,10 @@ def shelter(user, data):
             or obj.occupied + obj.reserved > obj.total
         ):
             fail("Shelter operation exceeds capacity or available guests/reservations.")
+    if not data.get("id"):
+        from .fieldops import apply_place
+
+        apply_place(obj, data)
     obj.full_clean()
     obj.save()
     audit(
@@ -352,3 +363,90 @@ def acquire_write_lock():
         with connection.cursor() as cursor:
             cursor.execute("SET LOCAL lock_timeout = '8s'")
         CoordinationLock.objects.select_for_update().get(pk=1)
+
+
+def validated_district(data):
+    if not data.get("district"):
+        return None
+    obj = District.objects.get(pk=data["district"])
+    if data.get("division") and obj.division_id != data["division"]:
+        fail("Choose a district in the selected division.", "district")
+    return obj
+
+
+def clear_location(profile):
+    profile.share_location = False
+    profile.latitude = None
+    profile.longitude = None
+    profile.location_accuracy = None
+    profile.location_updated_at = None
+
+
+def location_update(user, data):
+    from datetime import timedelta
+    import math
+
+    obj, _ = Profile.objects.get_or_create(user=user)
+    if type(data.get("enabled")) is not bool:
+        fail("Choose whether to share the pin.")
+    if not data["enabled"]:
+        clear_location(obj)
+        obj.save(
+            update_fields=[
+                "share_location",
+                "latitude",
+                "longitude",
+                "location_accuracy",
+                "location_updated_at",
+            ]
+        )
+        audit(user, "location sharing disabled", obj)
+        return
+    require(obj.share_presence, "Enable presence sharing before sharing a precise pin.")
+    try:
+        lat = Decimal(str(data.get("latitude")))
+        lon = Decimal(str(data.get("longitude")))
+        accuracy = float(data.get("accuracy"))
+        if (
+            not lat.is_finite()
+            or not lon.is_finite()
+            or not -90 <= lat <= 90
+            or not -180 <= lon <= 180
+            or not math.isfinite(accuracy)
+            or not 0 <= accuracy <= 100000
+        ):
+            raise ValueError()
+    except (ValueError, TypeError, InvalidOperation):
+        fail("Location requires finite latitude, longitude and accuracy values.")
+    captured = parse_datetime(str(data.get("captured_at", "")))
+    if (
+        not captured
+        or timezone.is_naive(captured)
+        or captured < timezone.now() - timedelta(minutes=2)
+        or captured > timezone.now() + timedelta(seconds=30)
+    ):
+        fail("Location reading is old or invalid. Capture a fresh location first.")
+    first = not obj.share_location
+    obj.share_location = True
+    obj.last_seen = timezone.now()
+    obj.latitude = lat.quantize(Decimal(".000001"))
+    obj.longitude = lon.quantize(Decimal(".000001"))
+    obj.location_accuracy = accuracy
+    obj.location_updated_at = captured
+    obj.save(
+        update_fields=[
+            "share_location",
+            "latitude",
+            "longitude",
+            "location_accuracy",
+            "location_updated_at",
+            "last_seen",
+        ]
+    )
+    if first:
+        audit(
+            user,
+            "location sharing enabled",
+            obj,
+            "Shared with signed-in participants; no coordinate history is recorded.",
+        )

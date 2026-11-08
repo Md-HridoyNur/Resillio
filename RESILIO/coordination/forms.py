@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, District
 
 PORTALS = [
     ("admin", "Administrator"),
@@ -11,6 +11,11 @@ PORTALS = [
 
 
 class RegistrationForm(UserCreationForm):
+    district = forms.ModelChoiceField(
+        queryset=District.objects.select_related("division"),
+        required=False,
+        label="District (optional)",
+    )
     role = forms.ChoiceField(
         choices=[
             ("volunteer", "Volunteer"),
@@ -28,7 +33,15 @@ class RegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ["username", "first_name", "email", "role", "organization", "area"]
+        fields = [
+            "username",
+            "first_name",
+            "email",
+            "role",
+            "organization",
+            "area",
+            "district",
+        ]
 
     def clean(self):
         data = super().clean()
@@ -46,6 +59,7 @@ class RegistrationForm(UserCreationForm):
                 role=self.cleaned_data["role"],
                 organization=self.cleaned_data.get("organization", ""),
                 area=area(self.cleaned_data.get("area", "")),
+                district=self.cleaned_data.get("district"),
             )
         return user
 

@@ -1,0 +1,41 @@
+RESILIO Bangladesh administrative boundary map
+
+Boundaries from geoBoundaries gbOpen, pinned source revision 9469f09:
+https://www.geoboundaries.org/
+https://www.geoboundaries.org/api/current/gbOpen/BGD/ADM1/
+https://www.geoboundaries.org/api/current/gbOpen/BGD/ADM2/
+https://github.com/wmgeolab/geoBoundaries/tree/9469f09/releaseData/gbOpen/BGD
+
+ADM1: 8 divisions. Boundary reference year 2015. Sources geoBoundaries / Wikimedia.
+Original boundary license: Creative Commons CC0.
+https://creativecommons.org/publicdomain/zero/1.0/
+ADM2: 64 districts. Boundary reference year 2020. Sources Bangladesh Bureau of
+Statistics (BBS) / OCHA Regional Office for Asia and the Pacific (ROAP).
+Original license: Creative Commons Attribution 3.0 IGO.
+https://creativecommons.org/licenses/by/3.0/igo/
+
+Adaptations for RESILIO: simplified source geometry, coordinate precision reduced
+to five decimals, consistent display names and parent division codes added.
+Representative points are approximate district summaries, not actual facilities.
+The boundaries are illustrative; they are not navigation or survey measurements.
+
+geoBoundaries database attribution: Runfola et al. (2020), geoBoundaries:
+A global database of political administrative boundaries. PLoS ONE 15(4):e0231866.
+https://doi.org/10.1371/journal.pone.0231866
+
+Leaflet 1.9.4: Copyright (c) 2010-2023 Vladimir Agafonkin and contributors.
+BSD-2-Clause license, bundled in ../vendor/leaflet/LICENSE.
+https://leafletjs.com/
+
+Optional online street tiles: (c) OpenStreetMap contributors.
+https://www.openstreetmap.org/copyright
+https://operations.osmfoundation.org/policies/tiles/
+Street tiles are requested only when enabled. They are NOT bundled, prefetched
+or stored in the application's offline service worker cache.
+
+Upazila reference directory: https://github.com/nuhil/bangladesh-geocode
+MIT license, downloaded 2026-11-08. See LOCAL_AREAS_LICENSE.txt.
+494 reference entries; not a claim of current government completeness.
+Bengali font: Google Fonts / Noto Sans Bengali, SIL Open Font License.
+https://github.com/google/fonts/tree/main/ofl/notosansbengali
+See ../fonts/Bengali-OFL.txt.

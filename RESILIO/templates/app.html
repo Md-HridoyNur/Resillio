@@ -14,9 +14,15 @@
         );
       }
     </script>
+    <link rel="stylesheet" href="/static/resilio/vendor/leaflet/leaflet.css" />
     <link rel="stylesheet" href="/static/resilio/app.css" />
-    <script defer src="/static/resilio/app.js"></script>
+    <script defer src="/static/resilio/vendor/leaflet/leaflet.js"></script>
+    <script defer src="/static/resilio/localareas.js"></script>
+    <script defer src="/static/resilio/i18n.js"></script>
+    <script defer src="/static/resilio/geography.js"></script>
+    <script defer src="/static/resilio/fieldops.js"></script>
     <script defer src="/static/resilio/network.js"></script>
+    <script defer src="/static/resilio/app.js"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -34,6 +40,7 @@
           >Join response</a
         ><span id="account" class="account-chip" hidden>Public access</span
         ><button id="logout" hidden>Sign out</button
+        ><button data-language-toggle>বাংলা</button
         ><button data-theme-toggle>Theme</button
         ><button class="crisis-btn" id="crisisToggle">⚠ Crisis mode</button>
       </div>
@@ -48,6 +55,8 @@
           ><a href="#shelters">Shelters</a
           ><a href="#notifications" id="notificationsLink" hidden
             >Notifications</a
+          ><a href="#emergencies">Emergency assistance</a
+          ><a href="#announcements">Area announcements</a
           ><a href="#sync">Sync Center</a
           ><a href="#administration" hidden>Administration</a
           ><a href="#profile" hidden>Profile</a>
@@ -95,6 +104,8 @@
               placeholder="e.g. Mirpur"
           /></label>
         </div>
+        <div id="resourceGeography" class="form-grid"></div>
+        <div id="resourcePinFields"></div>
         <label id="urgencyLabel"
           >Urgency<select name="urgency">
             <option value="normal">Normal</option>
